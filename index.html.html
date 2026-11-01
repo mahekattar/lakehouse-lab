@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lakehouse Lab: learn the architecture by running it</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+:root{--bg:#f2f6f8;--panel:#fff;--ink:#0d2231;--mute:#52697a;--line:#cbd8e0;--water:#0a6f8f;--wink:#fff;--br:#b8692a;--si:#6f8190;--go:#c89410;--bad:#b3261e;--ok:#1d7a4c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1e2d;--panel:#12293b;--ink:#e6f0f5;--mute:#94acbb;--line:#264256;--water:#4cc3e3;--wink:#08202c;--br:#e08f4c;--si:#aebdc8;--go:#f0c545;--bad:#ff8a80;--ok:#6fd49b}}
+:root[data-theme="dark"]{--bg:#0b1e2d;--panel:#12293b;--ink:#e6f0f5;--mute:#94acbb;--line:#264256;--water:#4cc3e3;--wink:#08202c;--br:#e08f4c;--si:#aebdc8;--go:#f0c545;--bad:#ff8a80;--ok:#6fd49b}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(60px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Sans 3",system-ui,sans-serif}
+h1,h2,h3{font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.1;margin:0}
+.w{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+nav .w{display:flex;gap:20px;align-items:center;height:56px;overflow-x:auto;white-space:nowrap}
+nav b{font:700 20px "Familjen Grotesk",sans-serif;margin-right:auto}
+nav a{color:var(--mute);text-decoration:none;font-weight:600}
+nav a:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--go);outline-offset:2px}
+.hero{padding:64px 0 36px}
+.hero h1{font-size:clamp(40px,8vw,82px);max-width:13ch}
+.hero p{font-size:20px;color:var(--mute);max-width:52ch;margin:18px 0 26px}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);margin-top:34px;border-radius:8px;overflow:hidden}
+.tiers div{padding:18px 16px;color:#fff;font-size:15px}
+.tiers b{display:block;font:700 22px "Familjen Grotesk",sans-serif}
+.t1{background:#a35a1f}.t2{background:#5d6f7d}.t3{background:#9a7006}
+@media(max-width:640px){.tiers{grid-template-columns:1fr}}
+.btn{background:var(--water);color:var(--wink);border:0;border-radius:6px;padding:10px 18px;font:600 15px "Source Sans 3",sans-serif;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+section{padding:56px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(28px,5vw,44px);margin-bottom:10px}
+.lead{color:var(--mute);max-width:62ch;margin:0 0 26px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.cmp>div{border-top:4px solid var(--line);padding-top:10px}
+.cmp>div.hl{border-color:var(--water)}
+.cmp h3{font-size:22px;margin-bottom:4px}.cmp p{margin:0;color:var(--mute);font-size:15px}
+.expl{display:grid;grid-template-columns:240px 1fr;gap:20px}
+@media(max-width:700px){.expl{grid-template-columns:1fr}}
+.tabs{display:flex;flex-direction:column;gap:4px}
+@media(max-width:700px){.tabs{flex-direction:row;overflow-x:auto}}
+.tabs button{background:none;border:0;border-left:3px solid var(--line);text-align:left;color:var(--mute);padding:7px 12px;font:600 15px "Source Sans 3",sans-serif;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected=true]{border-color:var(--water);color:var(--ink)}
+.ex{border-left:4px solid var(--go);padding-left:12px;color:var(--mute);margin-top:14px}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px}
+select,input[type=range]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.col{border:1px solid var(--line);border-top-width:5px;border-radius:6px;padding:12px;background:var(--panel)}
+.col h3{font-size:20px;margin-bottom:8px}
+.c1{border-top-color:var(--br)}.c2{border-top-color:var(--si)}.c3{border-top-color:var(--go)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n,th.n{text-align:right}
+tr.bad td{color:var(--bad)}
+.log{font-size:14px;color:var(--mute);margin:8px 0 0;padding-left:18px}
+.hint{font-size:14px;color:var(--mute);margin:10px 0 0}
+.row{display:grid;grid-template-columns:70px 1fr 90px;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.row i{display:block;height:16px;background:var(--go);border-radius:2px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin:12px 0}
+.grid span{aspect-ratio:1;border-radius:3px;background:var(--line);display:block}
+.grid span.s{background:var(--water)}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin:6px 0}
+.stats b{font:700 28px "Familjen Grotesk",sans-serif;display:block}
+.stats span{font-size:14px;color:var(--mute)}
+.q .opt{display:block;width:100%;text-align:left;margin:8px 0;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:6px;padding:10px 14px;font:inherit;cursor:pointer}
+.q .opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,transparent)}
+.q .opt.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,transparent)}
+.q h3{font-size:22px;margin:6px 0 10px}
+footer{padding:30px 0;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<nav><div class="w"><b>Lakehouse Lab</b><a href="#why">Why</a><a href="#parts">Components</a><a href="#medal">Medallion lab</a><a href="#speed">Speed lab</a><a href="#gov">Governance lab</a><a href="#quiz">Quiz</a></div></nav>
+
+<header class="hero"><div class="w">
+<h1>One platform for raw data and trusted reports.</h1>
+<p>A Data Lakehouse pairs the cheap, flexible storage of a data lake with the reliability of a data warehouse. Learn how it works, then try the key ideas yourself.</p>
+<a class="btn" href="#medal">Clean some data</a> <a class="btn alt" href="#why">Start with the basics</a>
+<div class="tiers"><div class="t1"><b>Bronze</b>Raw data, kept as it arrived</div><div class="t2"><b>Silver</b>Cleaned and validated</div><div class="t3"><b>Gold</b>Business-ready summaries</div></div>
+</div></header>
+
+<section id="why"><div class="w">
+<h2>Why a lakehouse?</h2>
+<p class="lead">A lakehouse stores structured data (tables), semi-structured data (JSON, XML) and unstructured data (images, audio, documents) in one place, and serves BI, data science and machine learning from it.</p>
+<div class="cmp">
+<div><h3>Data lake</h3><p>Stores huge amounts of raw data cheaply, but quality, consistency and transactions are hard to manage.</p></div>
+<div><h3>Data warehouse</h3><p>Structured, reliable data for analysis, but diverse data types need extra systems and cost.</p></div>
+<div class="hl"><h3>Lakehouse</h3><p>Low-cost storage plus transactions, governance and fast analytics on a single platform.</p></div>
+</div>
+</div></section>
+
+<section id="parts"><div class="w">
+<h2>Nine components</h2>
+<p class="lead">Select a component to see what it does and a real example.</p>
+<div class="panel expl"><div class="tabs" role="tablist" id="tabs"></div><div><h3 id="pt"></h3><p id="pd" style="margin:8px 0"></p><div class="ex" id="pe"></div></div></div>
+</div></section>
+
+<section id="medal"><div class="w">
+<h2>Medallion lab</h2>
+<p class="lead">Eight raw orders arrive with problems: a duplicate, a missing customer ID, a negative amount and mixed date formats. Run each stage and watch the data improve.</p>
+<div class="bar"><button class="btn" id="bS">Run Silver: clean and validate</button><button class="btn" id="bG" disabled>Run Gold: monthly revenue</button><button class="btn alt" id="bR">Reset</button></div>
+<div class="three">
+<div class="col c1"><h3>Bronze: raw</h3><div class="scroll"><table id="tB"></table></div></div>
+<div class="col c2"><h3>Silver: clean</h3><div class="scroll"><table id="tS"><tr><td>Not run yet.</td></tr></table></div><div id="quar"></div></div>
+<div class="col c3"><h3>Gold: revenue by month</h3><div id="tG"><p class="hint">Run Silver first.</p></div></div>
+</div>
+<ol class="log" id="mlog"></ol>
+</div></section>
+
+<section id="speed"><div class="w">
+<h2>Speed lab: skip what you don’t need</h2>
+<p class="lead">Each square is a data file with min/max statistics for <code>order_value</code>. The engine skips any file whose range can’t contain your value. Try a lookup, then change how the data is laid out.</p>
+<div class="panel">
+<div class="bar"><label>Look up order_value = <b id="vv">500</b> <input type="range" id="rv" min="0" max="999" value="500"></label>
+<button class="btn alt" id="bZ">Layout: random</button><button class="btn alt" id="bC">Files: many small</button></div>
+<div class="grid" id="grid"></div>
+<div class="stats"><div><b id="fo">0</b><span>files listed in metadata</span></div><div><b id="fs">0</b><span>files scanned</span></div><div><b id="fk">0%</b><span>skipped</span></div></div>
+<p class="hint" id="sh"></p>
+</div>
+</div></section>
+
+<section id="gov"><div class="w">
+<h2>Governance lab</h2>
+<p class="lead">Row-level filtering limits which rows you see. Column masking hides sensitive values. Pick a role and compare.</p>
+<div class="panel">
+<div class="bar"><label>Query as <select id="role"><option value="admin">Compliance admin</option><option value="north">North region manager</option><option value="analyst">Data analyst</option></select></label></div>
+<div class="scroll"><table id="gt"></table></div>
+<p class="hint" id="gh"></p>
+</div>
+</div></section>
+
+<section id="quiz"><div class="w">
+<h2>Check your understanding</h2>
+<p class="lead">Eight scenario questions. Pick an answer to see why.</p>
+<div class="panel q" id="qb"></div>
+</div></section>
+
+<footer><div class="w">Lakehouse Lab is an educational simulation. All data shown is made up.</div></footer>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+/* components */
+var PARTS=[
+["Data sources","Systems that generate the data: databases, apps, sensors, logs and external datasets.","An online shop produces customer details, payments and order history."],
+["Ingestion layer","Moves data into the lakehouse in batches at set times or as a continuous stream.","Daily sales load in batches; live website clicks arrive as a stream."],
+["Storage layer","Cloud object storage holding raw and processed data, often in columnar formats such as Parquet.","Years of transactions kept cheaply for later analysis."],
+["Table format and transactions","Delta Lake and Apache Iceberg add metadata, versions and consistent commits to files.","A pipeline updates a sales table and commits the change atomically."],
+["Processing and compute","Engines such as Apache Spark and SQL engines clean, join and aggregate data.","Branch sales are combined and revenue is totalled per region."],
+["Metadata catalog","Describes the data: table names, schemas, column types, locations and owners.","An analyst finds the customer table and reads its columns before querying."],
+["Security and governance","Authentication, role-based access, lineage, auditing and data-quality policies.","A regional manager can see only their own region’s sales."],
+["Data consumption","Dashboards, SQL analysis, reports and machine learning read the prepared data.","A manager compares monthly sales and profit by region."],
+["Monitoring and maintenance","Watches performance, quality, cost and failures; compacts small files and cleans expired files safely.","A slow query is fixed by compacting thousands of tiny files."]];
+var tb=$("tabs");
+PARTS.forEach(function(p,i){var b=document.createElement("button");b.setAttribute("role","tab");b.textContent=p[0];b.onclick=function(){selP(i)};tb.appendChild(b)});
+function selP(i){Array.prototype.forEach.call(tb.children,function(b,j){b.setAttribute("aria-selected",j===i)});$("pt").textContent=PARTS[i][0];$("pd").textContent=PARTS[i][1];$("pe").textContent="Example: "+PARTS[i][2]}
+selP(0);
+/* medallion */
+var RAW=[["A1","C01","2025-01-05",1200],["A1","C01","2025-01-05",1200],["A2","","2025-01-18",800],["A3","C02","05/02/2025",1500],["A4","C03","2025-02-11",-50],["A5","C04","14/02/2025",2100],["A6","C05","2025-03-02",900],["A7","C02","22/03/2025",1750]];
+var silver=null;
+function tbl(h,rows,badFn){return "<thead><tr>"+h.map(function(x){return "<th>"+x+"</th>"}).join("")+"</tr></thead><tbody>"+rows.map(function(r,i){return "<tr"+(badFn&&badFn(r,i)?" class='bad'":"")+">"+r.map(function(c){return "<td>"+esc(c===""?"(blank)":c)+"</td>"}).join("")+"</tr>"}).join("")+"</tbody>"}
+function seen(r,i){return RAW.findIndex(function(x){return x[0]===r[0]})!==i||!r[1]||r[3]<=0}
+function mreset(){silver=null;$("tB").innerHTML=tbl(["Order","Customer","Date","Amount"],RAW,seen);$("tS").innerHTML="<tr><td>Not run yet.</td></tr>";$("quar").innerHTML="";$("tG").innerHTML="<p class='hint'>Run Silver first.</p>";$("bG").disabled=true;$("bS").disabled=false;$("mlog").innerHTML="";ml("Bronze holds all 8 records exactly as received. Problem rows are in red.")}
+function ml(t){var l=document.createElement("li");l.textContent=t;$("mlog").appendChild(l)}
+function iso(d){var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d);return m?m[3]+"-"+m[2]+"-"+m[1]:d}
+$("bS").onclick=function(){var ids={},ok=[],q=[],dup=0;
+RAW.forEach(function(r){if(ids[r[0]]){dup++;return}ids[r[0]]=1;
+if(!r[1]){q.push([r[0],"missing customer ID"]);return}
+if(r[3]<=0){q.push([r[0],"amount must be positive"]);return}
+ok.push([r[0],r[1],iso(r[2]),r[3]])});
+silver=ok;$("tS").innerHTML=tbl(["Order","Customer","Date","Amount"],ok);
+$("quar").innerHTML=q.length?"<p class='hint'><b>Quarantined for review:</b> "+q.map(function(x){return esc(x[0])+" ("+x[1]+")"}).join("; ")+"</p>":"";
+$("bG").disabled=false;$("bS").disabled=true;
+ml("Removed "+dup+" duplicate, quarantined "+q.length+" invalid rows, standardized dates to YYYY-MM-DD. "+ok.length+" clean rows remain.")};
+$("bG").onclick=function(){var m={};silver.forEach(function(r){var k=r[2].slice(0,7);m[k]=(m[k]||0)+r[3]});
+var ks=Object.keys(m).sort(),mx=Math.max.apply(null,ks.map(function(k){return m[k]}));
+$("tG").innerHTML=ks.map(function(k){return "<div class='row'><span>"+k+"</span><i style='width:"+(m[k]/mx*100)+"%'></i><span style='text-align:right'>₹"+m[k].toLocaleString("en-IN")+"</span></div>"}).join("");
+$("bG").disabled=true;ml("Gold now holds monthly revenue, ready for dashboards.")};
+$("bR").onclick=mreset;mreset();
+/* speed lab */
+var clustered=false,compact=false;
+function files(){var n=compact?12:48,f=[];
+for(var i=0;i<n;i++){if(clustered){f.push([Math.floor(i*1000/n),Math.floor((i+1)*1000/n)-1])}
+else{var lo=(i*379)%700,w=compact?420:260;f.push([lo,Math.min(999,lo+w+(i*53)%200)])}}return f}
+function speed(){var v=+$("rv").value,f=files(),sc=0;$("vv").textContent=v;
+$("grid").innerHTML=f.map(function(r){var s=v>=r[0]&&v<=r[1];if(s)sc++;return "<span class='"+(s?"s":"")+"' title='"+r[0]+"–"+r[1]+"'></span>"}).join("");
+$("fo").textContent=f.length;$("fs").textContent=sc;$("fk").textContent=Math.round((1-sc/f.length)*100)+"%";
+$("sh").textContent=(clustered?"Clustered layout (like Z-ordering): similar values sit together, so ranges are tight and few files match. ":"Random layout: every file spans a wide range, so many files might contain the value. ")+(compact?"Compaction merged small files into 12 larger ones, so the catalog tracks far fewer files.":"Many small files mean more metadata to read and more file opens.")}
+$("rv").oninput=speed;
+$("bZ").onclick=function(){clustered=!clustered;this.textContent="Layout: "+(clustered?"clustered":"random");speed()};
+$("bC").onclick=function(){compact=!compact;this.textContent="Files: "+(compact?"compacted":"many small");speed()};
+speed();
+/* governance */
+var G=[["S1","North","Asha K.","4111-2222-3333-4444",5200],["S2","South","Ravi M.","5500-1234-5678-9012",3100],["S3","North","Meera P.","3400-9876-5432-1098",7800],["S4","West","John D.","6011-1111-2222-3333",2400],["S5","East","Li W.","4012-8888-8888-1881",6100]];
+function gov(){var r=$("role").value,rows=G.filter(function(x){return r!=="north"||x[1]==="North"});
+$("gt").innerHTML=tbl(["Sale","Region","Customer","Card","Amount"],rows.map(function(x){return [x[0],x[1],x[2],r==="admin"?x[3]:"•••• •••• •••• "+x[3].slice(-4),"₹"+x[4].toLocaleString("en-IN")]}));
+$("gh").textContent=r==="admin"?"Compliance admin: all rows, full card numbers, and every access is audited.":r==="north"?"Row-level filter: only North rows are returned. The card column is also masked.":"Column mask: all rows are visible, but card numbers show only the last four digits."}
+$("role").onchange=gov;gov();
+/* quiz */
+var QS=[
+["Queries on large datasets are slow. Which techniques reduce the data scanned?",["Columnar formats, partitioning and column pruning","Adding more raw CSV files","Disabling the catalog"],0,"Columnar formats such as Parquet, partitioning and pruning let the engine read less data."],
+["A stream creates thousands of small files. What helps?",["Delete the table","File compaction","More Bronze layers"],1,"Compaction merges small files, cutting metadata overhead and file-open latency."],
+["Which layer holds cleaned, validated and standardized data?",["Bronze","Silver","Gold"],1,"Silver applies validation, de-duplication and standard formats."],
+["A sales manager should see only their own region. What do you use?",["Role-based access with row-level filtering","A shared password","Copy the table per manager"],0,"Row-level filters enforce who sees which rows."],
+["How can an analyst compare today’s table with an earlier version?",["Time travel","Re-run the source system","Compaction"],0,"Transaction logs keep versions, so queries can read a past snapshot within the retention period."],
+["Which component tells an engineer a table’s schema and location?",["Metadata catalog","Consumption layer","Ingestion layer"],0,"The catalog stores schemas, column types and data locations."],
+["Two pipelines write to the same table at once. What protects consistency?",["Optimistic concurrency control in the table format","Turning off writes","Larger files"],0,"Writers stage changes and commit atomically; conflicts are detected and retried or aborted."],
+["Which operation cleans up unreferenced files outside the retention window?",["VACUUM or snapshot expiration","OPTIMIZE","Z-ordering"],0,"VACUUM removes files no snapshot needs, preventing storage bloat. Check retention settings first."]];
+var qi=0,sc=0;
+function showQ(){var b=$("qb");
+if(qi>=QS.length){b.innerHTML="<h3>You scored "+sc+" of "+QS.length+".</h3><button class='btn' id='ag'>Retake quiz</button>";$("ag").onclick=function(){qi=0;sc=0;showQ()};return}
+var q=QS[qi];b.innerHTML="<span class='hint'>Question "+(qi+1)+" of "+QS.length+"</span><h3>"+q[0]+"</h3>"+q[1].map(function(o,i){return "<button class='opt' data-i='"+i+"'>"+o+"</button>"}).join("")+"<p class='hint' id='ex' aria-live='polite'></p>";
+Array.prototype.forEach.call(b.querySelectorAll(".opt"),function(btn){btn.onclick=function(){var i=+btn.dataset.i;
+Array.prototype.forEach.call(b.querySelectorAll(".opt"),function(x){x.disabled=true});
+b.querySelector("[data-i='"+q[2]+"']").classList.add("ok");if(i===q[2])sc++;else btn.classList.add("no");
+$("ex").textContent=(i===q[2]?"Correct. ":"Not quite. ")+q[3];
+var n=document.createElement("button");n.className="btn";n.textContent=qi===QS.length-1?"See score":"Next question";n.onclick=function(){qi++;showQ()};b.appendChild(n)}})}
+showQ();
+})();
+</script>
+</body>
+</html>
